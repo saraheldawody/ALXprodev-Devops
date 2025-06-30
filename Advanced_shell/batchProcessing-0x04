@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # File: batchProcessing-0x04
-# Description: Fetch Pokémon data in parallel, handling background processes cleanly
+# Description: Fetch Pokémon data in parallel using background processes, with jobs and proper cleanup
 
 POKEMONS=(bulbasaur ivysaur venusaur charmander charmeleon)
 OUTPUT_DIR="pokemon_data"
@@ -25,6 +25,50 @@ for POKEMON in "${POKEMONS[@]}"; do
     fetch_pokemon "$POKEMON" &
 done
 
+# Show running jobs
+jobs
+
+# Wait for all background jobs to complete
 wait
 
-echo "All Pokémon data fetched in parallel."
+# Cleanup: ensure no leftover background processes remain
+kill $(jobs -p) 2>/dev/null
+
+echo "All Pokémon data fetched in parallel and background processes cleaned up."
+#!/bin/bash
+
+# File: batchProcessing-0x04
+# Description: Fetch Pokémon data in parallel using background processes, with jobs and proper cleanup
+
+POKEMONS=(bulbasaur ivysaur venusaur charmander charmeleon)
+OUTPUT_DIR="pokemon_data"
+API_URL="https://pokeapi.co/api/v2/pokemon"
+
+mkdir -p "$OUTPUT_DIR"
+
+fetch_pokemon() {
+    POKEMON="$1"
+    echo "Fetching data for $POKEMON..."
+    RESPONSE=$(curl -s -w "%{http_code}" "$API_URL/$POKEMON" -o "$OUTPUT_DIR/$POKEMON.json")
+    if [ "$RESPONSE" -eq 200 ]; then
+        echo "Saved data to $OUTPUT_DIR/$POKEMON.json ✅"
+    else
+        echo "Failed to fetch data for $POKEMON (HTTP Status: $RESPONSE)" >> errors.txt
+        echo "Error fetching $POKEMON, logged to errors.txt."
+    fi
+}
+
+for POKEMON in "${POKEMONS[@]}"; do
+    fetch_pokemon "$POKEMON" &
+done
+
+# Show running jobs
+jobs
+
+# Wait for all background jobs to complete
+wait
+
+# Cleanup: ensure no leftover background processes remain
+kill $(jobs -p) 2>/dev/null
+
+echo "All Pokémon data fetched in parallel and background processes cleaned up."
